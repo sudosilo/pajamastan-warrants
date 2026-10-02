@@ -1,0 +1,68 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Pajamastan Justice</title>
+<style>
+:root{--paper:#fbf7ef;--ink:#1f1b16;--muted:#6b6255;--line:#e4dccd;--seal:#8a1c1c;--card:#ffffff;--new:#fff3d6}
+*{box-sizing:border-box}
+body{margin:0;background:var(--paper);color:var(--ink);font-family:system-ui,-apple-system,"Segoe UI",Roboto,sans-serif;line-height:1.45}
+.wrap{max-width:760px;margin:0 auto;padding:28px 16px 60px}
+.crest{font-size:12px;letter-spacing:.22em;text-transform:uppercase;color:var(--seal);font-weight:600}
+h1{font-family:Georgia,"Times New Roman",serif;font-weight:800;font-size:44px;margin:6px 0 4px}
+.sub{color:var(--muted);margin:0 0 22px}
+.stats{display:flex;gap:12px;margin-bottom:22px;flex-wrap:wrap}
+.stat{flex:1;min-width:140px;background:var(--card);border:1px solid var(--line);border-radius:10px;padding:14px}
+.stat b{display:block;font-family:Georgia,"Times New Roman",serif;font-size:30px}
+.stat span{color:var(--muted);font-size:13px}
+input{width:100%;padding:12px 14px;border:1px solid var(--line);border-radius:10px;font:inherit;background:var(--card);margin-bottom:16px}
+.row{background:var(--card);border:1px solid var(--line);border-radius:10px;padding:12px 14px;margin-bottom:8px}
+.row.fresh{background:var(--new);border-color:#f0d48a}
+.name{font-weight:600;font-size:17px}
+.meta{color:var(--muted);font-size:14px}
+.tag{display:inline-block;font-size:11px;font-weight:600;color:var(--seal);border:1px solid var(--seal);border-radius:20px;padding:1px 8px;margin-left:6px;vertical-align:middle}
+.fine{margin-top:28px;font-size:13px;color:var(--muted);border-top:1px solid var(--line);padding-top:14px}
+</style>
+</head>
+<body>
+<div class="wrap">
+<div class="crest">Pajamastan Legal Department</div>
+<h1>Justice</h1>
+<p class="sub">Active warrants in Mohave County, relayed to the citizens of Pajamastan. Checked at 9 AM, noon, 3 PM and 6 PM.</p>
+<div class="stats">
+<div class="stat"><b id="total">0</b><span>active warrants listed</span></div>
+<div class="stat"><b id="today">0</b><span>new in the last 24 hours</span></div>
+<div class="stat"><b id="checked">never</b><span>last checked</span></div>
+</div>
+<input id="q" placeholder="Search a name" autocomplete="off">
+<div id="list"><p class="meta">Loading the docket.</p></div>
+<p class="fine">These are public records from the Mohave County courts warrant search. A warrant is an order to appear, not a finding of guilt. Confidential cases are not shown by the courts. Questions about a listing go to the issuing court.</p>
+</div>
+<script>
+let all=[];
+function fmt(ts){return new Date(ts*1000).toLocaleString("en-US",{timeZone:"America/Phoenix",month:"short",day:"numeric",hour:"numeric",minute:"2-digit"})}
+function draw(){
+  const q=document.getElementById("q").value.trim().toLowerCase();
+  const dayAgo=Date.now()/1000-86400;
+  const rows=all.filter(w=>!q||(w.first+" "+w.middle+" "+w.last).toLowerCase().includes(q));
+  document.getElementById("list").innerHTML=rows.length?rows.map(w=>{
+    const fresh=w.first_seen>dayAgo;
+    return '<div class="row'+(fresh?' fresh':'')+'"><div class="name">'+esc(w.first+" "+(w.middle?w.middle+" ":"")+w.last)+(fresh?'<span class="tag">NEW</span>':'')+'</div><div class="meta">'+esc(w.court)+' &middot; warrant dated '+esc(w.warrant_date)+' &middot; case '+esc(w.case)+'</div></div>'
+  }).join(""):'<p class="meta">No matches.</p>';
+  document.getElementById("today").textContent=all.filter(w=>w.first_seen>dayAgo).length;
+}
+function esc(s){return String(s||"").replace(/[&<>"]/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c]))}
+async function load(){
+  try{
+    const [w,s]=await Promise.all([fetch("/warrants?limit=5000").then(r=>r.json()),fetch("/status").then(r=>r.json())]);
+    all=w;document.getElementById("total").textContent=all.length;
+    document.getElementById("checked").textContent=s.last_run?fmt(s.last_run):(s.running?"running now":"not yet");
+    draw();
+  }catch(e){document.getElementById("list").innerHTML='<p class="meta">The docket could not be reached.</p>'}
+}
+document.getElementById("q").addEventListener("input",draw);
+load();
+</script>
+</body>
+</html>
