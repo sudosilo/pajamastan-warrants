@@ -46,18 +46,19 @@ function draw(){
   const q=document.getElementById("q").value.trim().toLowerCase();
   const dayAgo=Date.now()/1000-86400;
   const rows=all.filter(w=>!q||(w.first+" "+w.middle+" "+w.last).toLowerCase().includes(q));
-  document.getElementById("list").innerHTML=rows.length?rows.map(w=>{
+  document.getElementById("list").innerHTML=rows.length?rows.slice(0,500).map(w=>{
     const fresh=w.first_seen>dayAgo;
     return '<div class="row'+(fresh?' fresh':'')+'"><div class="name">'+esc(w.first+" "+(w.middle?w.middle+" ":"")+w.last)+(fresh?'<span class="tag">NEW</span>':'')+'</div><div class="meta">'+esc(w.court)+' &middot; warrant dated '+esc(w.warrant_date)+' &middot; case '+esc(w.case)+'</div></div>'
   }).join(""):'<p class="meta">No matches.</p>';
+  if(rows.length>500)document.getElementById("list").innerHTML+='<p class="meta">Showing the newest 500 of '+rows.length+'. Search a name to narrow the list.</p>';
   document.getElementById("today").textContent=all.filter(w=>w.first_seen>dayAgo).length;
 }
 function esc(s){return String(s||"").replace(/[&<>"]/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c]))}
 async function load(){
   try{
-    const [w,s]=await Promise.all([fetch("/warrants?limit=5000").then(r=>r.json()),fetch("/status").then(r=>r.json())]);
-    all=w;document.getElementById("total").textContent=all.length;
-    document.getElementById("checked").textContent=s.last_run?fmt(s.last_run):(s.running?"running now":"not yet");
+    const d=await fetch("/api/pajamastan-warrants-api").then(r=>{if(!r.ok)throw new Error(r.status);return r.json()});
+    all=d.rows.map(r=>({court:d.courts[r[0]],last:r[1],first:r[2],middle:r[3],warrant_date:r[4],case:r[5],first_seen:Date.parse(r[4]+"T12:00:00-07:00")/1000||0}));document.getElementById("total").textContent=all.length;
+    document.getElementById("checked").textContent=d.last_run?fmt(d.last_run):"not yet";
     draw();
   }catch(e){document.getElementById("list").innerHTML='<p class="meta">The docket could not be reached.</p>'}
 }

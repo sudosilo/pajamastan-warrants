@@ -1,0 +1,8 @@
+{
+  "rewrites": [
+    { "source": "/", "destination": "/pajamastan-warrants-justice.html" }
+  ],
+  "functions": {
+    "api/pajamastan-warrants-api.js": { "maxDuration": 60 }
+  }
+}

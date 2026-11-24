@@ -8,6 +8,6 @@ Live at pajamastan-warrants.vercel.app
 
 This app is checked every morning by Control Troll.
 
-Latest change: First deploy of the warrants page and the backend that keeps its docket current.
+Latest change: 2026-11-24, v2026.11.24. The docket now loads straight from the courts search through a built in endpoint, so the page works on Vercel with no separate server. New entries are judged by warrant date.
 
 See CHANGELOG.md for the full history.
