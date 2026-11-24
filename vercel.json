@@ -1,8 +1,16 @@
 {
   "rewrites": [
-    { "source": "/", "destination": "/pajamastan-warrants-justice.html" }
+    {
+      "source": "/",
+      "destination": "/pajamastan-warrants-justice.html"
+    }
   ],
   "functions": {
-    "api/pajamastan-warrants-api.js": { "maxDuration": 60 }
-  }
+    "api/pajamastan-warrants-api.js": {
+      "maxDuration": 300
+    }
+  },
+  "regions": [
+    "sfo1"
+  ]
 }

@@ -20,15 +20,21 @@ function dayStamp(d) {
 module.exports = async (req, res) => {
   const found = {};
   try {
-    for (const l of LETTERS) {
-      for (const c of await letter(l)) {
-        const w = { court: c[0] || "", last: c[1] || "", first: c[2] || "", middle: c[3] || "", warrant_date: c[5] || "", case: c[6] || "" };
-        if (!w.case) continue;
-        w.first_seen = dayStamp(w.warrant_date);
-        found[w.case + "|" + w.last + "|" + w.first] = w;
+    // Four searches run at a time so the whole alphabet finishes well inside the time limit.
+    const queue = LETTERS.slice();
+    async function worker() {
+      while (queue.length) {
+        const l = queue.shift();
+        for (const c of await letter(l)) {
+          const w = { court: c[0] || "", last: c[1] || "", first: c[2] || "", middle: c[3] || "", warrant_date: c[5] || "", case: c[6] || "" };
+          if (!w.case) continue;
+          w.first_seen = dayStamp(w.warrant_date);
+          found[w.case + "|" + w.last + "|" + w.first] = w;
+        }
+        await wait(200);
       }
-      await wait(300);
     }
+    await Promise.all([worker(), worker(), worker(), worker()]);
   } catch (e) {
     res.setHeader("Cache-Control", "no-store");
     return res.status(502).json({ error: e.message });
